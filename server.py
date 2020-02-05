@@ -2,10 +2,12 @@
 
 from jinja2 import StrictUndefined
 
-from flask import Flask
+from flask import (Flask, render_template, redirect, request, flash,
+                   session)
 from flask_debugtoolbar import DebugToolbarExtension
 
-from model import connect_to_db, db
+from model import User, Rating, Movie, connect_to_db, db
+
 
 
 app = Flask(__name__)
@@ -19,10 +21,43 @@ app.secret_key = "ABC"
 app.jinja_env.undefined = StrictUndefined
 
 
-@app.route('/')
+@app.route("/")
 def index():
     """Homepage."""
-    return "<html><body>Placeholder for the homepage.</body></html>"
+
+    return render_template("homepage.html")
+
+
+@app.route("/users")
+def user_list():
+    """Show list of users."""
+
+    users = User.query.all()
+
+    return render_template("user_list.html", users=users)
+
+
+@app.route("/register")
+def register():
+    """Show registration form."""
+
+    return render_template("register.html")
+
+
+@app.route("/handle-registration", methods=["POST"])
+def register_user():
+    """Register a new user."""
+
+    new_email = request.form.get("email")
+    new_password = request.form.get("password")
+
+    if new_email == User.query.filter_by(email=new_email).first():
+        flash("This user already exists.")
+    else:
+        User(email=new_email, password=new_password)
+        flash("New user created.")
+
+    return redirect("/register")
 
 
 if __name__ == "__main__":
@@ -37,4 +72,4 @@ if __name__ == "__main__":
     # Use the DebugToolbar
     DebugToolbarExtension(app)
 
-    app.run(port=5000, host='0.0.0.0')
+    app.run(port=5000, host="0.0.0.0")
