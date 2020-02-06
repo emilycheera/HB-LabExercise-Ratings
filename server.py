@@ -37,6 +37,15 @@ def user_list():
     return render_template("user_list.html", users=users)
 
 
+@app.route("/movies")
+def movie_list():
+    """Show list of movies."""
+
+    movies = Movie.query.order_by('title').all()
+
+    return render_template("movie_list.html", movies=movies)
+
+
 @app.route("/register")
 def register():
     """Show registration form."""
@@ -81,7 +90,7 @@ def login():
     if password == user.password:
         flash("Login successful.")
         session["logged_in_user"] = user.user_id
-        return redirect("/")
+        return redirect(f"/user-information?user={user.user_id}")
     else:
         flash("Incorrect email or password.")
         return redirect("/login")
@@ -95,6 +104,41 @@ def view_user_data():
     user = User.query.filter_by(user_id=user_id).first()
 
     return render_template("users.html", user=user)
+
+
+@app.route("/movies/<int:movie_id>")
+def view_movie_info(movie_id):
+
+    movie = Movie.query.filter_by(movie_id=movie_id).first()
+
+    return render_template("movie_info.html", movie=movie)
+
+
+@app.route("/new-rating/<int:movie_id>", methods=["POST"])
+def add_new_rating(movie_id):
+    """Add a new rating to a movie."""
+
+    score = request.form.get('score')
+
+    user_id = session["logged_in_user"]
+
+    user = User.query.get(user_id)
+
+    rating_object = Rating.query.filter_by(user_id=user_id,
+                                           movie_id=movie_id).first()
+
+    if rating_object:
+        rating_object.score = score
+        flash("Movie score updated.")
+    else:
+        new_rating = Rating(movie_id=movie_id, score=score, user_id=user_id)
+        user.ratings.append(new_rating)
+        db.session.add(new_rating)
+        flash("New rating added.")
+
+    db.session.commit()
+
+    return redirect(f"/movies/{movie_id}")
 
 
 @app.route("/logout")
@@ -117,6 +161,6 @@ if __name__ == "__main__":
     connect_to_db(app)
 
     # Use the DebugToolbar
-    DebugToolbarExtension(app)
+    # DebugToolbarExtension(app)
 
     app.run(port=5000, host="0.0.0.0")
