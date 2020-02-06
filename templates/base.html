@@ -6,7 +6,24 @@
 
 <body>
   Ratings
+
+{% if session.get("logged_in_user") == None %}
+  <a href="/login">Log In</a>
+{% endif %}
+{% if session.get("logged_in_user") %}
+  <a href="/logout">Log Out</a>
+{% endif %}
   <hr>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <p class=flashes>
+    {% for message in messages %}
+      {{ message }}<br>
+    {% endfor %}
+    </p>
+  {% endif %}
+{% endwith %}
 
   {% block content %} put your content here {% endblock %}
 

@@ -51,13 +51,60 @@ def register_user():
     new_email = request.form.get("email")
     new_password = request.form.get("password")
 
-    if new_email == User.query.filter_by(email=new_email).first():
-        flash("This user already exists.")
-    else:
-        User(email=new_email, password=new_password)
+    if User.query.filter_by(email=new_email).first() is None:
+        user = User(email=new_email, password=new_password)
+        db.session.add(user)
+        db.session.commit()
         flash("New user created.")
+        return redirect("/")
+    else:
+        flash("This user already exists.")
+        return redirect("/register")
 
-    return redirect("/register")
+
+@app.route("/login")
+def show_login_form():
+    """Show login form."""
+
+    return render_template("login.html")
+
+
+@app.route("/handle-login", methods=["POST"])
+def login():
+    """Login user."""
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    user = User.query.filter_by(email=email).first()
+
+    if password == user.password:
+        flash("Login successful.")
+        session["logged_in_user"] = user.user_id
+        return redirect("/")
+    else:
+        flash("Incorrect email or password.")
+        return redirect("/login")
+
+
+@app.route("/user-information")
+def view_user_data():
+
+    user_id = request.args.get('user')
+
+    user = User.query.filter_by(user_id=user_id).first()
+
+    return render_template("users.html", user=user)
+
+
+@app.route("/logout")
+def logout():
+    """Logout user."""
+
+    del session["logged_in_user"]
+    flash("Logout successful.")
+
+    return redirect("/")
 
 
 if __name__ == "__main__":
